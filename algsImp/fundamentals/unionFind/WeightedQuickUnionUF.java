@@ -1,17 +1,16 @@
 /******************************************************************************
- *  Compilation:  javac QuickFindUF.java
- *  Execution:  java QuickFindUF < input.txt
+ *  Compilation:  javac WeightedQuickUnionUF.java
+ *  Execution:  java WeightedQuickUnionUF < input.txt
  *  Dependencies: StdIn.java StdOut.java
  *
- *  Quick-find algorithm.
+ *  Weighted quick-union (without path compression).
  *
  ******************************************************************************/
 
 package unionFind;
 import edu.princeton.cs.algs4.*;
-
 /**
- *  The <tt>QuickFindUF</tt> class represents a <em>union-find data type</em>
+ *  The <tt>WeightedQuickUnionUF</tt> class represents a <em>union-find data type</em>
  *  (also known as the <em>disjoint-sets data type</em>).
  *  It supports the <em>union</em> and <em>find</em> operations,
  *  along with a <em>connected</em> operation for determining whether
@@ -19,7 +18,7 @@ import edu.princeton.cs.algs4.*;
  *  returns the total number of components.
  *  <p>
  *  The union-find data type models connectivity among a set of <em>n</em>
- *  sites, named 0 through <em>n</em> &ndash; 1.
+ *  sites, named 0 through <em>m</em> &ndash; 1.
  *  The <em>is-connected-to</em> relation must be an 
  *  <em>equivalence relation</em>:
  *  <ul>
@@ -62,13 +61,13 @@ import edu.princeton.cs.algs4.*;
  *  <em>union</em>&mdash;it cannot change during a call
  *  to <em>find</em>, <em>connected</em>, or <em>count</em>.
  *  <p>
- *  This implementation uses quick find.
+ *  This implementation uses weighted quick union by size (without path compression).
  *  Initializing a data structure with <em>n</em> sites takes linear time.
- *  Afterwards, the <em>find</em>, <em>connected</em>, and <em>count</em>
- *  operations take constant time but the <em>union</em> operation
- *  takes linear time.
+ *  Afterwards, the <em>union</em>, <em>find</em>, and <em>connected</em>
+ *  operations  take logarithmic time (in the worst case) and the
+ *  <em>count</em> operation takes constant time.
  *  For alternate implementations of the same API, see
- *  {@link UF}, {@link QuickUnionUF}, and {@link WeightedQuickUnionUF}.
+ *  {@link UF}, {@link QuickFindUF}, and {@link QuickUnionUF}.
  *
  *  <p>
  *  For additional documentation, see <a href="http://algs4.cs.princeton.edu/15uf">Section 1.5</a> of
@@ -77,11 +76,11 @@ import edu.princeton.cs.algs4.*;
  *  @author Robert Sedgewick
  *  @author Kevin Wayne
  */
-
-public class QuickFindUF {
-    private int[] id;    // id[i] = component identifier of i
-    private int count;   // number of components
-    private long access_count; //Count the number of id[] accesses to measure performance 
+public class WeightedQuickUnionUF {
+    private int[] parent;   // parent[i] = parent of i
+    private int[] size;     // size[i] = number of sites in subtree rooted at i
+    private int count;      // number of components
+    private long access_count; //Count array accesses per union to measure performance
 
     /**
      * Initializes an empty union-find data structure with <tt>n</tt> sites
@@ -91,11 +90,14 @@ public class QuickFindUF {
      * @param  n the number of sites
      * @throws IllegalArgumentException if <tt>n &lt; 0</tt>
      */
-    public QuickFindUF(int n) {
+    public WeightedQuickUnionUF(int n) {
         count = n;
-        id = new int[n];
-        for (int i = 0; i < n; i++)
-            id[i] = i;
+        parent = new int[n];
+        size = new int[n];
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+            size[i] = 1;
+        }
     }
 
     /**
@@ -110,20 +112,24 @@ public class QuickFindUF {
     /**
      * Returns the component identifier for the component containing site <tt>p</tt>.
      *
-     * @param  p the integer representing one site
+     * @param  p the integer representing one object
      * @return the component identifier for the component containing site <tt>p</tt>
      * @throws IndexOutOfBoundsException unless <tt>0 &le; p &lt; n</tt>
      */
     public int find(int p) {
         validate(p);
-        return id[p];
+        while (p != parent[p]) {
+        	p = parent[p];
+        	access_count++;
+        }
+        return p;
     }
 
     // validate that p is a valid index
     private void validate(int p) {
-        int n = id.length;
+        int n = parent.length;
         if (p < 0 || p >= n) {
-            throw new IndexOutOfBoundsException("index " + p + " is not between 0 and " + (n-1));
+            throw new IndexOutOfBoundsException("index " + p + " is not between 0 and " + (n-1));  
         }
     }
 
@@ -138,11 +144,9 @@ public class QuickFindUF {
      *         both <tt>0 &le; p &lt; n</tt> and <tt>0 &le; q &lt; n</tt>
      */
     public boolean connected(int p, int q) {
-        validate(p);
-        validate(q);
-        return id[p] == id[q];
+        return find(p) == find(q);
     }
-  
+
     /**
      * Merges the component containing site <tt>p</tt> with the 
      * the component containing site <tt>q</tt>.
@@ -153,43 +157,49 @@ public class QuickFindUF {
      *         both <tt>0 &le; p &lt; n</tt> and <tt>0 &le; q &lt; n</tt>
      */
     public void union(int p, int q) {
-        validate(p);
-        validate(q);
-        access_count = 0;
-        int pID = id[p];   // needed for correctness
-        int qID = id[q];   // to reduce the number of array accesses
+    	access_count = 0;
+    	int rootP = find(p);
+        int rootQ = find(q);
+        if (rootP == rootQ) return;
 
-        // p and q are already in the same component
-        if (pID == qID) return;
-
-        for (int i = 0; i < id.length; i++, access_count++)
-            if (id[i] == pID) {
-            	id[i] = qID; access_count++;
-            }
+        // make smaller root point to larger one
+        if (size[rootP] < size[rootQ]) {
+            parent[rootP] = rootQ;
+            size[rootQ] += size[rootP];
+        }
+        else {
+            parent[rootQ] = rootP;
+            size[rootP] += size[rootQ];
+        }
         count--;
     }
     
-    public long accessCount() {
-    	return access_count;
+    public int[] getCurrentState() {
+    	return parent;
     }
     
-    public int[] currentState() {
-    	return id;
+    public int[] getSize() {
+    	return size;
+    }
+    
+    public long getAccessCount() {
+    	return access_count;
     }
     
     public long getComponenentCount() {
     	return count;
     }
 
+
     /**
      * Reads in a sequence of pairs of integers (between 0 and n-1) from standard input, 
-     * where each integer represents some site;
+     * where each integer represents some object;
      * if the sites are in different components, merge the two components
      * and print the pair to standard output.
      */
     public static void main(String[] args) {
         int n = StdIn.readInt();
-        QuickFindUF uf = new QuickFindUF(n);
+        WeightedQuickUnionUF uf = new WeightedQuickUnionUF(n);
         while (!StdIn.isEmpty()) {
             int p = StdIn.readInt();
             int q = StdIn.readInt();
@@ -201,6 +211,7 @@ public class QuickFindUF {
     }
 
 }
+
 
 /******************************************************************************
  *  Copyright 2002-2015, Robert Sedgewick and Kevin Wayne.
