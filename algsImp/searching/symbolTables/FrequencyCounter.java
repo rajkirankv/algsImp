@@ -1,0 +1,33 @@
+package symbolTables;
+
+import edu.princeton.cs.algs4.StdIn;
+import edu.princeton.cs.algs4.StdOut;
+
+public class FrequencyCounter {
+	
+	public static void main(String[] args) {
+		int minlen = Integer.parseInt(args[0]);
+		ST<String, Integer> st = new ST<String, Integer>();
+		
+		//Building the symbol table
+		String key; Integer value;
+		while(!StdIn.isEmpty()) {
+			key = StdIn.readString();
+			value = st.get(key);
+			if(st.contains(key)) st.put(key, value+1);
+			else st.put(key, 1);
+		}
+		
+		//Finding the key with the maximum frequency subject to a threshold
+		int max_freq = 0; String max_key = ""; value = 0;
+		for(String s : st.keys()) {
+			if(s.length() > minlen)
+				value = st.get(s);
+				if(value > max_freq) {
+					max_freq = value;
+					max_key = s; 
+				}
+			}
+		StdOut.println(max_key + ": " + max_freq);
+		}	
+	}

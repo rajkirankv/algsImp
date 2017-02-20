@@ -23,6 +23,8 @@
  ******************************************************************************/
 
 package mergeSort;
+import java.util.Arrays;
+
 import edu.princeton.cs.algs4.*;
 /**
  *  The <tt>MergeBU</tt> class provides static methods for sorting an
@@ -71,6 +73,8 @@ public class MergeBU {
                 int hi = Math.min(lo+len+len-1, n-1);
                 merge(a, aux, lo, mid, hi);
             }
+          //RAJ: To reflect the status of the original array after every merge
+            System.out.println(Arrays.toString(a));
         }
         assert isSorted(a);
     }
@@ -97,7 +101,7 @@ public class MergeBU {
     // print array to standard output
     private static void show(Comparable[] a) {
         for (int i = 0; i < a.length; i++) {
-            StdOut.println(a[i]);
+            StdOut.print(a[i] + " ");
         }
     }
 

@@ -23,6 +23,7 @@
 
 package mergeSort;
 import edu.princeton.cs.algs4.*;
+
 import java.util.Arrays;
 
 /**
@@ -65,8 +66,8 @@ public class Merge {
         assert isSorted(a, lo, hi);
         
         //RAJ: 08/23/2016: To print the sorted part of an array
-        for (int m = lo; i <= hi; i++) System.out.print(a[i]);
-        System.out.println();
+        /*for (int m = lo; m <= hi; m++) System.out.print(a[m]);
+        System.out.println();*/
     }
 
     // mergesort a[lo..hi] using auxiliary array aux[lo..hi]
@@ -76,6 +77,8 @@ public class Merge {
         sort(a, aux, lo, mid);
         sort(a, aux, mid + 1, hi);
         merge(a, aux, lo, mid, hi);
+        //RAJ: To reflect the status of the original array after every merge
+        System.out.println(Arrays.toString(a));
     }
 
     /**

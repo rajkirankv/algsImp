@@ -2,6 +2,10 @@
 
 package mergeSort;
 
+import java.util.Arrays;
+
+import edu.princeton.cs.algs4.StdIn;
+
 public class BottomUp extends Sort {
 	
 	private static Comparable[] aux;
@@ -19,6 +23,8 @@ public class BottomUp extends Sort {
 		for(int size  = 1; size < N; size += size) {
 			for(int low = 0; low < N - size; low += size + size) {
 				merge(a, low, low + size - 1, Math.min(low + size + size - 1, N - 1));
+				//RAJ: To reflect the status of the original array after every merge
+		        System.out.println(Arrays.toString(a));
 			}
 		}
 	}
@@ -38,4 +44,17 @@ public class BottomUp extends Sort {
 			else a[i] = aux[k++];
 		} 
 	}
+	
+
+    /**
+     * Reads in a sequence of strings from standard input; mergesorts them; 
+     * and prints them to standard output in ascending order. 
+     */
+    public static void main(String[] args) {
+        String[] a = StdIn.readAllStrings();
+        Merge.sort(a);
+        show(a);
+    }
+}
+
 }
